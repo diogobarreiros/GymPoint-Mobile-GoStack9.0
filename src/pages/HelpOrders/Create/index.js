@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {TouchableOpacity, Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -8,12 +8,16 @@ import Background from '~/components/Background';
 import Button from '~/components/Button';
 import api from '~/services/api';
 
-import {Container, Answer} from './styles';
+import {Container, Answer, LengthInput} from './styles';
 
 export default function NewHelpOrder({navigation}) {
   const student_id = navigation.getParam('student_id');
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState('');
+
+  const questionLength = useMemo(() => {
+    return 255 - question.length;
+  }, [question.length]);
 
   async function handleSend() {
     try {
@@ -40,6 +44,9 @@ export default function NewHelpOrder({navigation}) {
           placeholder="Inclua seu pedido de auxílio"
           onChangeText={setQuestion}
         />
+        <LengthInput limit={questionLength < 0}>
+          {questionLength}/255
+        </LengthInput>
 
         <Button loading={loading} onPress={handleSend}>
           Enviar pedido

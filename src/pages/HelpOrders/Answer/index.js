@@ -25,7 +25,7 @@ export default function HelpOrderAnswer({navigation}) {
         </Header>
         <Question>{helpOrder.question}</Question>
         <Title>RESPOSTA</Title>
-        <Answer>{helpOrder.answer}</Answer>
+        <Answer>{helpOrder.answer ? helpOrder.answer : 'Sem resposta'}</Answer>
       </Container>
     </Background>
   );

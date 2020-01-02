@@ -26,35 +26,38 @@ function CheckIns({isFocused}) {
   const [page, setPage] = useState(1);
 
   async function loadCheckIns(pg) {
+    const pageLimit = 10;
     setLoading(true);
 
     if (checkins === []) {
       const array = newCheckins.concat(checkins);
       setCheckins(array);
-    } else if (hasNextPage) {
+    } else if (hasNextPage || pg === 1) {
       const response = await api.get(`students/${student.id}/checkins`, {
-        params: {page: pg, pageLimit: 10},
+        params: {page: pg, pageLimit},
       });
 
-      let countChekins = 1 + response.data.length;
+      setHasNextPage(response.data.hasNextPage);
 
-      if (countChekins > 1) {
-        const newArray = response.data;
+      let countChekins =
+        pg >= 2
+          ? response.data.totalDocs - (pg - 1) * pageLimit
+          : response.data.totalDocs;
+
+      if (countChekins > 0) {
+        const newArray = response.data.docs;
         newArray.map(checkin => {
-          countChekins -= 1;
           checkin.dateFormatted = formatRelative(
             parseISO(checkin.createdAt),
             new Date(),
             {locale: pt},
           );
           checkin.index = countChekins;
+          countChekins -= 1;
           return checkin;
         });
 
         setCheckins(pg >= 2 ? [...checkins, ...newArray] : newArray);
-      } else {
-        setPage(pg - 1);
-        setHasNextPage(false);
       }
     }
     setLoading(false);
@@ -81,15 +84,16 @@ function CheckIns({isFocused}) {
   }
 
   async function loadMore() {
-    const nextPage = page + 1;
-    loadCheckIns(nextPage);
-    setPage(nextPage);
+    if (hasNextPage) {
+      const nextPage = page + 1;
+      loadCheckIns(nextPage);
+      setPage(nextPage);
+    }
   }
 
   async function refreshList() {
     setRefreshing(true);
     setHasNextPage(true);
-    setCheckins([]);
     setPage(1);
     await loadCheckIns(1);
     setRefreshing(false);

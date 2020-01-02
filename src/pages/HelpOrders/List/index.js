@@ -24,15 +24,23 @@ function HelpOrderList({navigation, isFocused}) {
   const [page, setPage] = useState(1);
 
   async function loadHelpOrders(pg) {
+    const pageLimit = 10;
     setLoading(true);
 
-    if (hasNextPage) {
+    if (hasNextPage || pg === 1) {
       const response = await api.get(`students/${student.id}/help-orders`, {
-        params: {page: pg, pageLimit: 10},
+        params: {page: pg, pageLimit},
       });
 
-      if (response.data.length > 0) {
-        const newArray = response.data;
+      if (
+        response.data.count <= pageLimit ||
+        page >= response.data.count / pageLimit
+      ) {
+        setHasNextPage(false);
+      }
+
+      if (response.data.rows.length > 0) {
+        const newArray = response.data.rows;
         newArray.map(helpOrder => {
           helpOrder.dateFormatted = formatRelative(
             parseISO(helpOrder.created_at),
@@ -43,9 +51,6 @@ function HelpOrderList({navigation, isFocused}) {
         });
 
         setHelpOrders(pg >= 2 ? [...helpOrders, ...newArray] : newArray);
-      } else {
-        setPage(pg - 1);
-        setHasNextPage(false);
       }
     }
 
@@ -69,15 +74,16 @@ function HelpOrderList({navigation, isFocused}) {
   }
 
   async function loadMore() {
-    const nextPage = page + 1;
-    loadHelpOrders(nextPage);
-    setPage(nextPage);
+    if (hasNextPage) {
+      const nextPage = page + 1;
+      loadHelpOrders(nextPage);
+      setPage(nextPage);
+    }
   }
 
   async function refreshList() {
     setRefreshing(true);
     setHasNextPage(true);
-    setHelpOrders([]);
     setPage(1);
     await loadHelpOrders(1);
     setRefreshing(false);
